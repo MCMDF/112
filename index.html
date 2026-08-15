@@ -6,20 +6,6 @@
   <title>Team Access & Task Manager PRO</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-    async function loadData() {
-  try {
-    const res = await fetch('https://my-backend-rrgj.onrender.com/api/notify-admin');
-    if (!res.ok) {
-      console.error('Backend error:', res.status, res.statusText);
-      throw new Error(`HTTP ${res.status}`);
-    }
-    db = await res.json();
-    applyTheme(db.theme || 'default-dark');
-  } catch(e) { 
-    console.error('Failed to load data:', e);
-    toast('⚠️ Не удалось подключиться к серверу');
-  }
-}
     
     :root[data-theme="default-dark"] {
       --bg:#0a0d14; --panel:#111622; --panel2:#171d2a; --line:#252d3d;
@@ -452,32 +438,33 @@
 <script>
 'use strict';
 
+// ⚠️ АДРЕС ВАШЕГО БЭКЕНДА НА RENDER
+const BACKEND_URL = 'https://my-backend-rrgj.onrender.com';
+
 let isDev = false;
 let activeTeam = 1;
 let currentAdminTab = 'users';
 let activeSection = 'access';
 let selected = null;
-let db = null;
 
-async function loadData() {
-  try {
-    const res = await fetch('https://my-backend-rrgj.onrender.com/api/notify-admin');
-    if (res.ok) {
-      db = await res.json();
-      applyTheme(db.theme || 'default-dark');
-    }
-  } catch(e) { console.error('Ошибка загрузки:', e); }
-}
+// Исходные данные и локальное хранилище
+const defaultDb = {
+  passwords: { user: '111', dev: '11111' },
+  botToken: '',
+  adminChatId: '',
+  theme: 'default-dark',
+  teams: { 1: { name: 'Команда 1' }, 2: { name: 'Команда 2' } },
+  people: [
+    {id:'p1', team: 1, name:'Карина', telegramChatId:'', services:[], tasks:[]},
+    {id:'p2', team: 1, name:'Дима', telegramChatId:'', services:[], tasks:[]}
+  ],
+  logs: []
+};
 
-async function save() {
-  if (!db) return;
-  try {
-    await fetch('https://my-backend-rrgj.onrender.com/api/notify-admin', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(db)
-    });
-  } catch(e) { console.error('Ошибка сохранения:', e); }
+let db = JSON.parse(localStorage.getItem('planer_db')) || defaultDb;
+
+function save() {
+  localStorage.setItem('planer_db', JSON.stringify(db));
 }
 
 function applyTheme(themeName) {
@@ -491,7 +478,6 @@ function applyTheme(themeName) {
 }
 
 function setTheme(themeName) {
-  if(!db) return;
   db.theme = themeName;
   save();
   applyTheme(themeName);
@@ -503,7 +489,6 @@ function toggleWhiteTheme(isWhite) {
 }
 
 function logAction(msg){
-  if(!db) return;
   if(!db.logs) db.logs = [];
   db.logs.unshift({ time: new Date().toLocaleTimeString(), text: msg });
   if(db.logs.length > 50) db.logs.pop();
@@ -512,16 +497,8 @@ function logAction(msg){
 
 function esc(s=''){ return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c])); }
 
-document.getElementById('loginForm').addEventListener('submit', async (e)=>{
+document.getElementById('loginForm').addEventListener('submit', (e)=>{
   e.preventDefault();
-  await loadData();
-
-  if(!db) {
-    document.getElementById('authError').textContent = 'Ошибка связи с сервером!';
-    document.getElementById('authError').style.display = 'block';
-    return;
-  }
-
   const pass = document.getElementById('authPassword').value.trim();
 
   if(pass === db.passwords.dev){
@@ -553,6 +530,7 @@ function initSession(){
     document.getElementById('pushToggle').checked = (Notification.permission === 'granted');
   }
 
+  applyTheme(db.theme || 'default-dark');
   renderAll();
 }
 
@@ -608,7 +586,6 @@ function renderSection(){
 }
 
 function renderPeople(){
-  if(!db) return;
   const peopleList = getTeamPeople();
   document.getElementById('team1Label').textContent = db.teams[1].name;
   document.getElementById('team2Label').textContent = db.teams[2].name;
@@ -659,18 +636,8 @@ async function submitTask(e){
   const newTask = { id: crypto.randomUUID(), title, desc: tDesc.value.trim(), urg, done: false };
   if(!p.tasks) p.tasks = [];
   p.tasks.push(newTask);
+  save();
   logAction(`Добавлена задача "${title}" для ${p.name}`);
-
-  if(db.botToken && p.telegramChatId){
-    try {
-      const msgText = `📌 *Задание для ${p.name}*\n\n*Заголовок:* ${title}\n*Срочность:* ${urg}`;
-      await fetch(`https://api.telegram.org/bot${db.botToken}/sendMessage`, {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ chat_id: p.telegramChatId, text: msgText, parse_mode: 'Markdown' })
-      });
-    } catch(err){}
-  }
 
   toast('Задание сохранено!');
   closeModal();
@@ -700,18 +667,26 @@ async function toggleTask(id){
   const t = p.tasks.find(x=>x.id===id);
   if(t){ 
     t.done = !t.done; 
-    await save(); 
+    save(); 
     renderAll(); 
 
     if (t.done) {
+      toast('Отправка уведомления на сервер...');
       try {
-        await fetch('https://my-backend-rrgj.onrender.com/api/notify-admin', {
+        const res = await fetch(`${BACKEND_URL}/api/notify-admin`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ personName: p.name, taskTitle: t.title })
         });
-        toast('Уведомление отправлено начальнику!');
-      } catch (e) {}
+        const data = await res.json();
+        if(data.ok) {
+          toast('Уведомление отправлено в Telegram!');
+        } else {
+          toast('Ошибка отправки: ' + data.error);
+        }
+      } catch (e) {
+        toast('Ошибка связи с сервером!');
+      }
     }
   }
 }
@@ -733,10 +708,9 @@ function openAdminMenu(tab = 'users'){
   document.getElementById('modalBody').innerHTML = `
     <div class="admin-folder-tabs">
       <button class="admin-tab ${tab==='users'?'active':''}" onclick="openAdminMenu('users')">👥 Команда</button>
-      <button class="admin-tab ${tab==='broadcast'?'active':''}" onclick="openAdminMenu('broadcast')">📢 Рассылка</button>
       <button class="admin-tab ${tab==='backup'?'active':''}" onclick="openAdminMenu('backup')">💾 Резервирование</button>
       <button class="admin-tab ${tab==='logs'?'active':''}" onclick="openAdminMenu('logs')">📜 Логи</button>
-      <button class="admin-tab ${tab==='system'?'active':''}" onclick="openAdminMenu('system')">⚙ Пароли / Настройки</button>
+      <button class="admin-tab ${tab==='system'?'active':''}" onclick="openAdminMenu('system')">⚙ Пароли</button>
     </div>
     <div id="adminTabContent"></div>
   `;
@@ -747,7 +721,7 @@ function openAdminMenu(tab = 'users'){
 
 function renderAdminTabContent(){
   const content = document.getElementById('adminTabContent');
-  if(!content || !db) return;
+  if(!content) return;
 
   if(currentAdminTab === 'users'){
     content.innerHTML = `
@@ -756,7 +730,6 @@ function renderAdminTabContent(){
         ${db.people.map(p => `
           <div style="display:flex;gap:8px;align-items:center;background:var(--input-bg);padding:10px;border-radius:10px;border:1px solid var(--line)">
             <input style="flex:1" value="${esc(p.name)}" placeholder="Имя" onchange="updatePersonName('${p.id}', this.value)">
-            <input style="flex:1" value="${esc(p.telegramChatId||'')}" placeholder="Telegram ID" onchange="updatePersonTG('${p.id}', this.value)">
             <select onchange="updatePersonTeam('${p.id}', this.value)">
               <option value="1" ${p.team===1?'selected':''}>Команда 1</option>
               <option value="2" ${p.team===2?'selected':''}>Команда 2</option>
@@ -768,17 +741,6 @@ function renderAdminTabContent(){
       <button class="btn primary" style="width:100%" onclick="addPersonPrompt()">＋ Добавить сотрудника</button>
     `;
   } 
-  else if(currentAdminTab === 'broadcast'){
-    content.innerHTML = `
-      <div style="display:grid;gap:12px">
-        <div class="field full">
-          <label>Глобальное сообщение всем в Telegram</label>
-          <textarea id="bcMessage" rows="4" placeholder="Текст сообщения..."></textarea>
-        </div>
-        <button class="btn primary" onclick="sendBroadcastMessage()">📢 Отправить всем</button>
-      </div>
-    `;
-  }
   else if(currentAdminTab === 'backup'){
     content.innerHTML = `
       <div style="display:grid;gap:14px">
@@ -812,39 +774,10 @@ function renderAdminTabContent(){
         </div>
         <button class="btn primary" onclick="savePasswords()">Сохранить пароли</button>
         <hr style="border:0;border-top:1px solid var(--line)">
-        <div class="field full">
-          <label>Telegram Bot Token</label>
-          <input id="bToken" value="${esc(db.botToken||'')}" onchange="saveBotToken(this.value)">
-        </div>
-        <div class="field full">
-          <label>Telegram Chat ID Начальника (для уведомлений)</label>
-          <input id="aChatId" value="${esc(db.adminChatId||'')}" placeholder="123456789" onchange="saveAdminChatId(this.value)">
-        </div>
         <button class="btn danger" onclick="resetDatabase()">🔥 Сбросить всё</button>
       </div>
     `;
   }
-}
-
-async function sendBroadcastMessage(){
-  const msg = document.getElementById('bcMessage').value.trim();
-  if(!msg) return toast('Введите текст');
-  if(!db.botToken) return toast('Укажите Bot Token!');
-
-  let count = 0;
-  for(let p of db.people){
-    if(p.telegramChatId){
-      try {
-        await fetch(`https://api.telegram.org/bot${db.botToken}/sendMessage`, {
-          method: 'POST',
-          headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({ chat_id: p.telegramChatId, text: `📢 *Объявление:*\n\n${msg}`, parse_mode: 'Markdown' })
-        });
-        count++;
-      }catch(e){}
-    }
-  }
-  toast(`Отправлено пользователям: ${count}`);
 }
 
 function exportData(){
@@ -873,13 +806,12 @@ function importData(e){
 }
 
 function updatePersonName(id, val){ const p=db.people.find(x=>x.id===id); if(p){ p.name=val.trim(); save(); renderAll(); } }
-function updatePersonTG(id, val){ const p=db.people.find(x=>x.id===id); if(p){ p.telegramChatId=val.trim(); save(); } }
 function updatePersonTeam(id, teamVal){ const p=db.people.find(x=>x.id===id); if(p){ p.team=parseInt(teamVal); save(); renderAll(); } }
 
 function addPersonPrompt(){
   const name=prompt('Имя нового сотрудника:');
   if(name){ 
-    db.people.push({id:crypto.randomUUID(), team:activeTeam, name:name.trim(), telegramChatId:'', services:[], tasks:[]}); 
+    db.people.push({id:crypto.randomUUID(), team:activeTeam, name:name.trim(), services:[], tasks:[]}); 
     save(); openAdminMenu('users'); renderAll(); 
   }
 }
@@ -894,23 +826,10 @@ function savePasswords(){
   save(); toast('Пароли обновлены');
 }
 
-function saveBotToken(val){ db.botToken = val.trim(); save(); toast('Токен сохранен'); }
-function saveAdminChatId(val){ db.adminChatId = val.trim(); save(); toast('ID начальника сохранен'); }
-
 function resetDatabase(){
   if(confirm('Сбросить данные?')){
-    db = {
-      passwords: { user: '111', dev: '11111' },
-      botToken: '',
-      adminChatId: '',
-      theme: 'default-dark',
-      teams: { 1: { name: 'Команда 1' }, 2: { name: 'Команда 2' } },
-      people: [
-        {id:'p1', team: 1, name:'Карина', telegramChatId:'', services:[], tasks:[]},
-        {id:'p2', team: 1, name:'Дима', telegramChatId:'', services:[], tasks:[]}
-      ],
-      logs: []
-    };
+    localStorage.removeItem('planer_db');
+    db = defaultDb;
     save();
     location.reload();
   }
