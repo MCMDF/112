@@ -447,7 +447,7 @@ let db = null;
 
 async function loadData() {
   try {
-    const res = await fetch('/api/data');
+    const res = await fetch('https://my-backend-rrgj.onrender.com/api/notify-admin');
     if (res.ok) {
       db = await res.json();
       applyTheme(db.theme || 'default-dark');
@@ -458,7 +458,7 @@ async function loadData() {
 async function save() {
   if (!db) return;
   try {
-    await fetch('/api/data', {
+    await fetch('https://my-backend-rrgj.onrender.com/api/notify-admin', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(db)
@@ -691,7 +691,7 @@ async function toggleTask(id){
 
     if (t.done) {
       try {
-        await fetch('/api/notify-admin', {
+        await fetch('https://my-backend-rrgj.onrender.com/api/notify-admin', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ personName: p.name, taskTitle: t.title })
