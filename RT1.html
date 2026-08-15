@@ -1,0 +1,972 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Team Access & Task Manager PRO</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    
+    :root[data-theme="default-dark"] {
+      --bg:#0a0d14; --panel:#111622; --panel2:#171d2a; --line:#252d3d;
+      --text:#f4f7fb; --muted:#8e99ad; --accent:#7c5cff; --accent2:#9a83ff;
+      --green:#42d392; --red:#ff6678; --yellow:#f4c95d; --shadow:0 18px 60px rgba(0,0,0,0.45);
+      --bg-gradient: radial-gradient(circle at 20% 0%,#1d1740 0,#0a0d14 35%);
+      --sidebar-bg: rgba(12, 16, 24, 0.85); --input-bg:#0c111a;
+    }
+
+    :root[data-theme="light"] {
+      --bg:#f4f6f9; --panel:#ffffff; --panel2:#eaeef5; --line:#dce1e8;
+      --text:#1a202c; --muted:#64748b; --accent:#6366f1; --accent2:#4f46e5;
+      --green:#10b981; --red:#ef4444; --yellow:#f59e0b; --shadow:0 10px 30px rgba(0,0,0,0.08);
+      --bg-gradient: radial-gradient(circle at 20% 0%,#eef2ff 0,#f4f6f9 35%);
+      --sidebar-bg: rgba(255, 255, 255, 0.85); --input-bg:#f8fafc;
+    }
+
+    :root[data-theme="cyberpunk"] {
+      --bg:#05050a; --panel:#0d0e17; --panel2:#151828; --line:rgba(0, 240, 255, 0.2);
+      --text:#00f0ff; --muted:#708090; --accent:#ff0055; --accent2:#ff5599;
+      --green:#00ff66; --red:#ff0055; --yellow:#ffe600; --shadow:0 0 30px rgba(0, 240, 255, 0.15);
+      --bg-gradient: radial-gradient(circle at 50% 0%,#2a0033 0,#05050a 50%);
+      --sidebar-bg: rgba(13, 14, 23, 0.9); --input-bg:#080910;
+    }
+
+    :root[data-theme="matrix"] {
+      --bg:#020b02; --panel:#051405; --panel2:#0a200a; --line:#005500;
+      --text:#00ff41; --muted:#008020; --accent:#00ff41; --accent2:#50ff70;
+      --green:#00ff41; --red:#ff3333; --yellow:#ffff00; --shadow:0 0 20px rgba(0, 255, 65, 0.1);
+      --bg-gradient: radial-gradient(circle at 50% 0%,#002200 0,#020b02 50%);
+      --sidebar-bg: rgba(5, 20, 5, 0.9); --input-bg:#020802;
+    }
+
+    :root[data-theme="emerald"] {
+      --bg:#061412; --panel:#0b211e; --panel2:#12302b; --line:#1d4740;
+      --text:#e6f7f5; --muted:#72a098; --accent:#10b981; --accent2:#34d399;
+      --green:#10b981; --red:#f43f5e; --yellow:#fbbf24; --shadow:0 18px 60px rgba(0,0,0,0.5);
+      --bg-gradient: radial-gradient(circle at 20% 0%,#0b3832 0,#061412 40%);
+      --sidebar-bg: rgba(11, 33, 30, 0.85); --input-bg:#051210;
+    }
+
+    :root[data-theme="nordic"] {
+      --bg:#0f172a; --panel:#1e293b; --panel2:#334155; --line:#475569;
+      --text:#f8fafc; --muted:#94a3b8; --accent:#38bdf8; --accent2:#7dd3fc;
+      --green:#4ade80; --red:#f87171; --yellow:#facc15; --shadow:0 18px 60px rgba(0,0,0,0.4);
+      --bg-gradient: radial-gradient(circle at 20% 0%,#1e3a8a 0,#0f172a 40%);
+      --sidebar-bg: rgba(30, 41, 59, 0.85); --input-bg:#0f172a;
+    }
+
+    body {
+      background: var(--bg-gradient);
+      color: var(--text);
+      font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+      min-height: 100vh;
+      position: relative;
+      transition: background 0.3s, color 0.3s;
+    }
+
+    button, input, textarea, select { font: inherit; }
+    button { cursor: pointer; border: 0; background: transparent; color: inherit; }
+
+    .app { display: grid; grid-template-columns: 260px 1fr; min-height: 100vh; }
+
+    .sidebar {
+      border-right: 1px solid var(--line);
+      padding: 22px 16px;
+      background: var(--sidebar-bg);
+      backdrop-filter: blur(20px);
+      position: sticky; top: 0; height: 100vh;
+      overflow-y: auto;
+      display: flex; flex-direction: column;
+      z-index: 100;
+      transition: background 0.3s, border-color 0.3s;
+    }
+
+    .brand {
+      display: flex; align-items: center; justify-content: space-between;
+      font-weight: 800; font-size: 18px; padding: 8px 10px 18px;
+      cursor: pointer; user-select: none; transition: .2s;
+    }
+    .brand:hover { opacity: 0.85; }
+    .logo-wrap { display: flex; align-items: center; gap: 11px; }
+    .logo {
+      width: 38px; height: 38px; border-radius: 12px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      display: grid; place-items: center; font-weight: 900; color: #fff;
+      position: relative;
+    }
+    .logo::after {
+      content: '⚙'; position: absolute; bottom: -2px; right: -2px;
+      font-size: 10px; background: var(--panel); border-radius: 50%; padding: 1px 3px;
+      border: 1px solid var(--line);
+    }
+    .role-badge {
+      font-size: 10px; padding: 3px 8px; border-radius: 99px;
+      background: var(--panel2); color: var(--accent2);
+      text-transform: uppercase; font-weight: 700;
+    }
+
+    .label {
+      color: var(--muted); font-size: 11px; text-transform: uppercase;
+      letter-spacing: .12em; padding: 10px 10px 6px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+
+    .people { display: flex; flex-direction: column; gap: 6px; }
+    .person {
+      display: flex; align-items: center; gap: 12px; padding: 12px;
+      border: 1px solid transparent; border-radius: 12px; color: var(--text);
+      text-align: left; width: 100%; transition: .15s;
+    }
+    .person:hover { background: var(--panel2); }
+    .person.active { background: var(--panel2); border-color: var(--line); }
+    .avatar {
+      width: 36px; height: 36px; border-radius: 10px; display: grid;
+      place-items: center; background: var(--line); color: var(--text);
+      font-weight: 800; flex: none;
+    }
+    .person-info { min-width: 0; flex: 1; }
+    .person-info strong { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 14px; }
+    .person-info small { color: var(--muted); font-size: 11px; }
+    .task-badge {
+      margin-left: auto; min-width: 20px; height: 20px; padding: 0 6px;
+      border-radius: 999px; font-size: 11px; font-weight: 800;
+      display: inline-flex; align-items: center; justify-content: center; flex: none;
+    }
+
+    .team-selector {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 6px;
+      padding: 4px; background: var(--input-bg); border: 1px solid var(--line);
+      border-radius: 12px; margin-bottom: 14px;
+    }
+    .team-btn {
+      padding: 10px; color: var(--muted); border-radius: 8px;
+      font-size: 12px; font-weight: 700; transition: .2s;
+      display: flex; align-items: center; justify-content: center; gap: 4px;
+    }
+    .team-btn.active { background: var(--panel2); color: var(--text); }
+
+    .side-bottom { margin-top: auto; display: grid; gap: 8px; padding-top: 14px; border-top: 1px solid var(--line); }
+    .side-btn, .btn {
+      border: 1px solid var(--line); background: var(--panel2); color: var(--text);
+      padding: 10px 12px; border-radius: 10px; font-weight: 600;
+      display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+      transition: .15s;
+    }
+    .side-btn:hover, .btn:hover { filter: brightness(1.1); }
+
+    .main { padding: 30px; max-width: 1500px; width: 100%; margin: 0 auto; }
+    .top { display: flex; justify-content: space-between; gap: 20px; align-items: flex-start; margin-bottom: 20px; }
+    h1 { margin: 0 0 7px; font-size: 28px; }
+    .subtitle { color: var(--muted); font-size: 13px; }
+    .actions { display: flex; gap: 9px; flex-wrap: wrap; justify-content: flex-end; }
+    .primary { background: var(--accent); color: #fff; border-color: transparent; font-weight: 700; }
+    .primary:hover { background: var(--accent2); }
+    .danger { color: var(--red); border-color: var(--line); }
+
+    .nav-tabs { display: flex; gap: 8px; margin-bottom: 16px; background: var(--panel); padding: 6px; border-radius: 12px; border: 1px solid var(--line); width: fit-content; }
+    .nav-tab { padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 700; color: var(--muted); }
+    .nav-tab.active { background: var(--accent); color: #fff; }
+
+    .toolbar { display: flex; gap: 10px; margin-bottom: 14px; }
+    .search { flex: 1; background: var(--panel); border: 1px solid var(--line); border-radius: 11px; padding: 12px 14px; color: var(--text); outline: none; }
+
+    .table-wrap { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; overflow: hidden; box-shadow: var(--shadow); }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 14px 16px; border-bottom: 1px solid var(--line); text-align: left; }
+    th { font-size: 11px; color: var(--muted); text-transform: uppercase; background: var(--panel2); }
+    .service { display: flex; align-items: center; gap: 11px; }
+    .service-icon { width: 35px; height: 35px; border-radius: 10px; background: var(--panel2); display: grid; place-items: center; font-weight: 800; }
+    .service-name { font-weight: 700; }
+    .masked { font-family: monospace; color: var(--text); }
+    .copy { background: transparent; border: 0; color: var(--muted); margin-left: 7px; padding: 4px 8px; border-radius: 6px; cursor: pointer; }
+    .pill { display: inline-flex; align-items: center; gap: 6px; border-radius: 999px; padding: 5px 9px; font-size: 11px; font-weight: 700; }
+    .row-actions { display: flex; gap: 5px; }
+    .iconbtn { width: 36px; height: 36px; border: 1px solid var(--line); border-radius: 10px; background: var(--panel2); color: var(--text); display: grid; place-items: center; }
+    .empty { text-align: center; padding: 50px 20px; color: var(--muted); }
+
+    .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; padding: 16px; z-index: 1000; backdrop-filter: blur(4px); }
+    .modal.show { display: flex; }
+    .modal-card { width: min(750px, 100%); max-height: 90vh; overflow-y: auto; background: var(--panel); border: 1px solid var(--line); border-radius: 18px; padding: 22px; }
+    .modal-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; }
+    .modal-head h2 { margin: 0; font-size: 20px; }
+    .form { display: grid; grid-template-columns: 1fr 1fr; gap: 13px; }
+    .field { display: grid; gap: 7px; }
+    .field.full { grid-column: 1 / -1; }
+    .field label { font-size: 12px; color: var(--muted); }
+    .field input, .field textarea, .field select { width: 100%; border: 1px solid var(--line); background: var(--input-bg); color: var(--text); border-radius: 10px; padding: 12px; outline: none; }
+    .modal-actions { display: flex; justify-content: flex-end; gap: 9px; margin-top: 18px; }
+
+    .admin-folder-tabs { display: flex; gap: 6px; border-bottom: 1px solid var(--line); padding-bottom: 12px; margin-bottom: 16px; overflow-x: auto; }
+    .admin-tab { padding: 8px 14px; border-radius: 8px; font-size: 12px; font-weight: 700; color: var(--muted); background: var(--panel2); white-space: nowrap; }
+    .admin-tab.active { background: var(--accent); color: #fff; }
+
+    .toast { position: fixed; right: 20px; bottom: 80px; background: var(--panel2); border: 1px solid var(--line); color: var(--text); padding: 12px 18px; border-radius: 11px; opacity: 0; transform: translateY(10px); transition: .2s; z-index: 2000; font-weight: 600; font-size: 13px; }
+    .toast.show { opacity: 1; transform: none; }
+
+    .task-card { background: var(--panel); border: 1px solid var(--line); border-radius: 15px; padding: 16px; display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; border-left-width: 4px; border-left-style: solid; }
+
+    .bottom-nav { display: none; position: fixed; bottom: 0; left: 0; right: 0; height: 60px; background: var(--panel); border-top: 1px solid var(--line); z-index: 900; grid-template-columns: 1fr 1fr; padding: 6px; gap: 6px; }
+    .nav-item { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; color: var(--muted); font-size: 12px; font-weight: 600; border-radius: 10px; transition: .15s; }
+    .nav-item.active { color: var(--accent2); background: var(--panel2); }
+
+    .mobile-cards { display: none; flex-direction: column; gap: 10px; }
+    .m-card { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+    .m-card-top { display: flex; justify-content: space-between; align-items: center; }
+    .m-card-data { display: grid; gap: 6px; background: var(--input-bg); padding: 10px; border-radius: 10px; font-size: 13px; }
+
+    .auth-screen { position: fixed; inset: 0; z-index: 3000; background: var(--bg-gradient); display: flex; align-items: center; justify-content: center; padding: 20px; }
+    .auth-card { width: min(380px, 100%); background: var(--panel); border: 1px solid var(--line); border-radius: 20px; padding: 28px; box-shadow: var(--shadow); }
+    .auth-logo { width: 54px; height: 54px; border-radius: 16px; background: linear-gradient(135deg, var(--accent), var(--accent2)); display: grid; place-items: center; font-weight: 900; font-size: 22px; margin-bottom: 18px; color: #fff; }
+    .auth-error { color: var(--red); background: var(--panel2); border: 1px solid var(--line); padding: 10px; border-radius: 10px; font-size: 12px; margin-bottom: 12px; display: none; }
+    .auth-screen.hidden { display: none; }
+
+    .switch-row { display: flex; align-items: center; justify-content: space-between; background: var(--panel); border: 1px solid var(--line); padding: 14px; border-radius: 12px; }
+    .switch { position: relative; display: inline-block; width: 44px; height: 24px; }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider { position: absolute; cursor: pointer; inset: 0; background-color: var(--line); transition: .3s; border-radius: 24px; }
+    .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: #fff; transition: .3s; border-radius: 50%; }
+    input:checked + .slider { background-color: var(--accent); }
+    input:checked + .slider:before { transform: translateX(20px); }
+
+    .log-item { font-size: 12px; padding: 8px 12px; background: var(--input-bg); border: 1px solid var(--line); border-radius: 8px; margin-bottom: 6px; display: flex; justify-content: space-between; }
+
+    .theme-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; margin-top: 10px; }
+    .theme-card { border: 2px solid var(--line); border-radius: 12px; padding: 10px; cursor: pointer; text-align: center; font-size: 12px; font-weight: 700; transition: .2s; background: var(--panel2); }
+    .theme-card:hover { border-color: var(--accent); }
+    .theme-card.active { border-color: var(--accent); background: var(--accent); color: #fff; }
+    .theme-preview { height: 24px; border-radius: 6px; margin-bottom: 6px; display: flex; gap: 4px; padding: 3px; background: rgba(0,0,0,0.15); }
+    .theme-preview span { flex: 1; border-radius: 4px; }
+
+    @media (max-width: 900px) {
+      body { padding-bottom: 70px; }
+      .app { grid-template-columns: 1fr; }
+      .sidebar { position: relative; height: auto; border-right: 0; border-bottom: 1px solid var(--line); padding: 16px; }
+      .people { flex-direction: row; overflow-x: auto; padding-bottom: 8px; }
+      .person { width: 180px; flex-shrink: 0; }
+      .side-nav-block, .nav-tabs, .side-bottom { display: none !important; }
+      .main { padding: 16px; }
+      .top { flex-direction: column; gap: 12px; align-items: stretch; }
+      .actions { justify-content: stretch; }
+      .actions .btn { flex: 1; }
+      .bottom-nav { display: grid; }
+      .table-wrap { display: none; }
+      .mobile-cards { display: flex; }
+      .form { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<div id="authScreen" class="auth-screen">
+  <div class="auth-card">
+    <div class="auth-logo">V</div>
+    <h1 style="font-size:22px;margin:0 0 6px">PLANER</h1>
+    <div id="authError" class="auth-error"></div>
+    <form id="loginForm">
+      <div class="field" style="margin-bottom:16px">
+        <label>Пароль доступа</label>
+        <input id="authPassword" type="password" placeholder="••••••••" autofocus required>
+      </div>
+      <button type="submit" class="btn primary" style="width:100%;padding:12px">Войти в систему</button>
+    </form>
+  </div>
+</div>
+
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand" onclick="showSection('settings')" title="Настройки">
+      <div class="logo-wrap">
+        <div class="logo">V</div>
+        <span>PLANER</span>
+      </div>
+      <span id="roleBadge" class="role-badge">Сотрудник</span>
+    </div>
+
+    <div class="side-nav-block">
+      <div class="label">Разделы</div>
+      <div style="display:grid;gap:5px;margin-bottom:14px">
+        <button id="accessNav" class="person active" onclick="showSection('access')">🔐 <strong>Доступы</strong></button>
+        <button id="tasksNav" class="person" onclick="showSection('tasks')">✓ <strong>Задачи</strong></button>
+        <button id="settingsNav" class="person" onclick="showSection('settings')">⚙ <strong>Настройки</strong></button>
+      </div>
+    </div>
+
+    <div class="label">Команда</div>
+    <div class="team-selector">
+      <button id="team1Btn" class="team-btn active" onclick="switchTeam(1)">
+        <span>👥</span> <span id="team1Label">Команда 1</span>
+      </button>
+      <button id="team2Btn" class="team-btn" onclick="switchTeam(2)">
+        <span>👥</span> <span id="team2Label">Команда 2</span>
+      </button>
+    </div>
+
+    <div class="label">
+      <span>Участники</span>
+      <button id="editTeamsBtn" style="background:none;border:0;color:var(--accent2);font-size:11px;cursor:pointer;display:none" onclick="openAdminMenu('users')">⚙ Панель Админа</button>
+    </div>
+    
+    <div id="people" class="people"></div>
+
+    <div class="side-bottom">
+      <button id="adminMenuBtn" class="side-btn" style="display:none;background:var(--panel2);color:var(--accent2)" onclick="openAdminMenu('users')">⚙ Панель Админа</button>
+      <button class="side-btn danger" onclick="logout()">Выйти</button>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="top">
+      <div>
+        <h1 id="title">Доступы</h1>
+        <div class="subtitle" id="subtitle">Управление данными выбранного сотрудника</div>
+      </div>
+      <div class="actions" id="sectionActions"></div>
+    </div>
+
+    <div class="nav-tabs">
+      <button id="tabAccess" class="nav-tab active" onclick="showSection('access')">🔐 Доступы</button>
+      <button id="tabTasks" class="nav-tab" onclick="showSection('tasks')">✓ Задачи</button>
+      <button id="tabSettings" class="nav-tab" onclick="showSection('settings')">⚙ Настройки</button>
+    </div>
+
+    <div id="accessSection">
+      <div class="toolbar" id="toolbar">
+        <input id="search" class="search" placeholder="Поиск доступа..." oninput="renderTable()">
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Сервис</th><th>Логин</th><th>Пароль</th><th>Действия</th></tr></thead>
+          <tbody id="table"></tbody>
+        </table>
+      </div>
+      <div id="mobileCards" class="mobile-cards"></div>
+    </div>
+
+    <section id="tasksSection" style="display:none">
+      <div id="tasksList" style="display:grid;gap:10px"></div>
+    </section>
+
+    <section id="userSettingsSection" style="display:none">
+      <div style="display:grid;gap:14px;max-width:650px">
+        
+        <div class="switch-row">
+          <div>
+            <div style="font-weight:700;font-size:14px">Белая тема</div>
+            <div style="font-size:12px;color:var(--muted)">Светлое оформление интерфейса</div>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="whiteThemeToggle" onchange="toggleWhiteTheme(this.checked)">
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <div style="background:var(--panel);border:1px solid var(--line);padding:16px;border-radius:12px">
+          <div style="font-weight:700;margin-bottom:4px">Выбор темы оформления</div>
+          <div style="font-size:12px;color:var(--muted);margin-bottom:12px">Выберите готовый стиль интерфейса:</div>
+          
+          <div class="theme-grid">
+            <div class="theme-card" id="tc-default-dark" onclick="setTheme('default-dark')">
+              <div class="theme-preview"><span style="background:#0a0d14"></span><span style="background:#7c5cff"></span></div>
+              Neon Dark
+            </div>
+            <div class="theme-card" id="tc-light" onclick="setTheme('light')">
+              <div class="theme-preview"><span style="background:#f4f6f9"></span><span style="background:#6366f1"></span></div>
+              Classic Light
+            </div>
+            <div class="theme-card" id="tc-cyberpunk" onclick="setTheme('cyberpunk')">
+              <div class="theme-preview"><span style="background:#05050a"></span><span style="background:#ff0055"></span></div>
+              Cyberpunk
+            </div>
+            <div class="theme-card" id="tc-matrix" onclick="setTheme('matrix')">
+              <div class="theme-preview"><span style="background:#020b02"></span><span style="background:#00ff41"></span></div>
+              Matrix
+            </div>
+            <div class="theme-card" id="tc-emerald" onclick="setTheme('emerald')">
+              <div class="theme-preview"><span style="background:#061412"></span><span style="background:#10b981"></span></div>
+              Emerald
+            </div>
+            <div class="theme-card" id="tc-nordic" onclick="setTheme('nordic')">
+              <div class="theme-preview"><span style="background:#0f172a"></span><span style="background:#38bdf8"></span></div>
+              Nordic Slate
+            </div>
+          </div>
+        </div>
+
+        <div class="switch-row">
+          <div>
+            <div style="font-weight:700;font-size:14px">Push-уведомления</div>
+            <div style="font-size:12px;color:var(--muted)">Уведомления браузера</div>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="pushToggle" onchange="togglePushNotifications(this.checked)">
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <div class="switch-row" id="adminQuickBtn" style="display:none">
+          <div>
+            <div style="font-weight:700;font-size:14px">СуперАдминка</div>
+            <div style="font-size:12px;color:var(--muted)">Панель управления системой</div>
+          </div>
+          <button class="btn primary" onclick="openAdminMenu('users')">Открыть Панель</button>
+        </div>
+
+        <div style="background:var(--panel);border:1px solid var(--line);padding:16px;border-radius:12px">
+          <div style="font-weight:700;margin-bottom:6px">Учётная запись</div>
+          <div style="font-size:13px;color:var(--muted);margin-bottom:12px">Текущий уровень: <strong id="currentUserRole" style="color:var(--text)"></strong></div>
+          <button class="btn danger" style="width:100%" onclick="logout()">Выйти</button>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<nav class="bottom-nav">
+  <button id="mNavAccess" class="nav-item active" onclick="showSection('access')"><span>🔐</span>Доступы</button>
+  <button id="mNavTasks" class="nav-item" onclick="showSection('tasks')"><span>✓</span>Задачи</button>
+</nav>
+
+<div id="modal" class="modal" onclick="if(event.target===this)closeModal()">
+  <div class="modal-card">
+    <div class="modal-head"><h2 id="modalTitle"></h2><button class="iconbtn" onclick="closeModal()">✕</button></div>
+    <div id="modalBody"></div>
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+'use strict';
+
+let isDev = false;
+let activeTeam = 1;
+let currentAdminTab = 'users';
+let activeSection = 'access';
+let selected = null;
+let db = null;
+
+async function loadData() {
+  try {
+    const res = await fetch('https://my-backend-rrgj.onrender.com/api/notify-admin');
+    if (res.ok) {
+      db = await res.json();
+      applyTheme(db.theme || 'default-dark');
+    }
+  } catch(e) { console.error('Ошибка загрузки:', e); }
+}
+
+async function save() {
+  if (!db) return;
+  try {
+    await fetch('https://my-backend-rrgj.onrender.com/api/notify-admin', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(db)
+    });
+  } catch(e) { console.error('Ошибка сохранения:', e); }
+}
+
+function applyTheme(themeName) {
+  document.documentElement.setAttribute('data-theme', themeName || 'default-dark');
+  const toggle = document.getElementById('whiteThemeToggle');
+  if (toggle) toggle.checked = (themeName === 'light');
+  
+  document.querySelectorAll('.theme-card').forEach(card => card.classList.remove('active'));
+  const activeCard = document.getElementById('tc-' + themeName);
+  if(activeCard) activeCard.classList.add('active');
+}
+
+function setTheme(themeName) {
+  if(!db) return;
+  db.theme = themeName;
+  save();
+  applyTheme(themeName);
+  toast('Тема изменена');
+}
+
+function toggleWhiteTheme(isWhite) {
+  setTheme(isWhite ? 'light' : 'default-dark');
+}
+
+function logAction(msg){
+  if(!db) return;
+  if(!db.logs) db.logs = [];
+  db.logs.unshift({ time: new Date().toLocaleTimeString(), text: msg });
+  if(db.logs.length > 50) db.logs.pop();
+  save();
+}
+
+function esc(s=''){ return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c])); }
+
+document.getElementById('loginForm').addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  await loadData();
+
+  if(!db) {
+    document.getElementById('authError').textContent = 'Ошибка связи с сервером!';
+    document.getElementById('authError').style.display = 'block';
+    return;
+  }
+
+  const pass = document.getElementById('authPassword').value.trim();
+
+  if(pass === db.passwords.dev){
+    isDev = true;
+    logAction('Вход Администратора');
+    initSession();
+  } else if(pass === db.passwords.user){
+    isDev = false;
+    logAction('Вход Сотрудника');
+    initSession();
+  } else {
+    document.getElementById('authError').textContent = 'Неверный пароль!';
+    document.getElementById('authError').style.display = 'block';
+  }
+});
+
+function initSession(){
+  document.getElementById('authScreen').classList.add('hidden');
+  document.getElementById('authPassword').value = '';
+  document.getElementById('authError').style.display = 'none';
+  
+  document.getElementById('roleBadge').textContent = isDev ? 'Администратор' : 'Сотрудник';
+  document.getElementById('currentUserRole').textContent = isDev ? 'Администратор' : 'Сотрудник';
+  document.getElementById('adminMenuBtn').style.display = isDev ? 'block' : 'none';
+  document.getElementById('editTeamsBtn').style.display = isDev ? 'block' : 'none';
+  document.getElementById('adminQuickBtn').style.display = isDev ? 'flex' : 'none';
+  
+  if ('Notification' in window) {
+    document.getElementById('pushToggle').checked = (Notification.permission === 'granted');
+  }
+
+  renderAll();
+}
+
+function logout(){ document.getElementById('authScreen').classList.remove('hidden'); }
+
+function getTeamPeople(){ return db ? db.people.filter(p => (p.team || 1) === activeTeam) : []; }
+function current(){ const list = getTeamPeople(); return list.find(p => p.id === selected) || list[0] || null; }
+
+function switchTeam(teamId){
+  activeTeam = teamId;
+  document.getElementById('team1Btn').classList.toggle('active', teamId===1);
+  document.getElementById('team2Btn').classList.toggle('active', teamId===2);
+  selected = getTeamPeople()[0]?.id || null;
+  renderAll();
+}
+
+function showSection(section){
+  activeSection = section;
+
+  document.getElementById('accessSection').style.display = section === 'access' ? 'block' : 'none';
+  document.getElementById('tasksSection').style.display = section === 'tasks' ? 'block' : 'none';
+  document.getElementById('userSettingsSection').style.display = section === 'settings' ? 'block' : 'none';
+
+  document.getElementById('tabAccess').classList.toggle('active', section === 'access');
+  document.getElementById('tabTasks').classList.toggle('active', section === 'tasks');
+  document.getElementById('tabSettings').classList.toggle('active', section === 'settings');
+
+  document.getElementById('accessNav').classList.toggle('active', section === 'access');
+  document.getElementById('tasksNav').classList.toggle('active', section === 'tasks');
+  document.getElementById('settingsNav').classList.toggle('active', section === 'settings');
+
+  if(document.getElementById('mNavAccess')) document.getElementById('mNavAccess').classList.toggle('active', section === 'access');
+  if(document.getElementById('mNavTasks')) document.getElementById('mNavTasks').classList.toggle('active', section === 'tasks');
+
+  renderSection();
+}
+
+function renderSection(){
+  const p = current();
+  if(activeSection==='access'){
+    document.getElementById('title').textContent = (p ? p.name : '');
+    document.getElementById('sectionActions').innerHTML = `<button class="btn primary" onclick="openService()">＋ Добавить доступ</button>`;
+    renderTable();
+  } else if(activeSection==='tasks'){
+    document.getElementById('title').textContent = (p ? p.name : '');
+    document.getElementById('sectionActions').innerHTML = `<button class="btn primary" onclick="openTask()">＋ Новое задание</button>`;
+    renderTasks();
+  } else if(activeSection==='settings'){
+    document.getElementById('title').textContent = 'Мои Настройки';
+    document.getElementById('subtitle').textContent = 'Параметры внешнего вида и профиля';
+    document.getElementById('sectionActions').innerHTML = '';
+  }
+}
+
+function renderPeople(){
+  if(!db) return;
+  const peopleList = getTeamPeople();
+  document.getElementById('team1Label').textContent = db.teams[1].name;
+  document.getElementById('team2Label').textContent = db.teams[2].name;
+
+  if(!peopleList.find(p=>p.id===selected)) selected = peopleList[0]?.id || null;
+
+  document.getElementById('people').innerHTML = peopleList.map(p=>{
+    const pend = (p.tasks||[]).filter(t=>!t.done).length;
+    return `<button class="person ${p.id===selected?'active':''}" onclick="selectPerson('${p.id}')">
+      <span class="avatar">${p.name[0]}</span>
+      <span class="person-info"><strong>${esc(p.name)}</strong><small>${(p.services||[]).length} доступов</small></span>
+      ${pend ? `<span class="task-badge" style="background:var(--red);color:#fff">${pend}</span>` : ''}
+    </button>`;
+  }).join('');
+}
+
+function selectPerson(id){ selected=id; renderPeople(); renderSection(); }
+function renderAll(){ renderPeople(); renderSection(); }
+
+function openTask(){
+  const p = current(); if(!p) return toast('Выберите сотрудника');
+  document.getElementById('modalTitle').textContent = `Задание для: ${p.name}`;
+  document.getElementById('modalBody').innerHTML = `
+    <form class="form" onsubmit="submitTask(event)">
+      <div class="field full"><label>Заголовок задачи</label><input id="tTitle" required placeholder="Например: Сделать отчёт"></div>
+      <div class="field full"><label>Подробное описание</label><textarea id="tDesc"></textarea></div>
+      <div class="field full">
+        <label>Срочность</label>
+        <select id="tUrg">
+          <option value="Обычная">Обычная</option>
+          <option value="Срочно">🔥 Обязательно сегодня</option>
+        </select>
+      </div>
+      <div class="modal-actions field full">
+        <button type="button" class="btn" onclick="closeModal()">Отмена</button>
+        <button class="btn primary">Сохранить</button>
+      </div>
+    </form>`;
+  showModal();
+}
+
+async function submitTask(e){
+  e.preventDefault();
+  const p = current();
+  const title = tTitle.value.trim();
+  const urg = tUrg.value;
+
+  const newTask = { id: crypto.randomUUID(), title, desc: tDesc.value.trim(), urg, done: false };
+  if(!p.tasks) p.tasks = [];
+  p.tasks.push(newTask);
+  logAction(`Добавлена задача "${title}" для ${p.name}`);
+
+  if(db.botToken && p.telegramChatId){
+    try {
+      const msgText = `📌 *Задание для ${p.name}*\n\n*Заголовок:* ${title}\n*Срочность:* ${urg}`;
+      await fetch(`https://api.telegram.org/bot${db.botToken}/sendMessage`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ chat_id: p.telegramChatId, text: msgText, parse_mode: 'Markdown' })
+      });
+    } catch(err){}
+  }
+
+  toast('Задание сохранено!');
+  closeModal();
+  renderAll();
+}
+
+function renderTasks(){
+  const p = current();
+  const list = document.getElementById('tasksList');
+  if(!p || !p.tasks || !p.tasks.length){ list.innerHTML=`<div class="empty">У ${esc(p?.name||'')} пока нет задач</div>`; return; }
+
+  list.innerHTML = p.tasks.map(t=>`
+    <div class="task-card" style="border-left-color:${t.done?'var(--green)':'var(--accent)'}">
+      <div>
+        <div style="font-weight:700;${t.done?'text-decoration:line-through;color:var(--muted)':''}">${esc(t.title)}</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:4px">${esc(t.desc||'')}</div>
+        <span class="pill" style="background:var(--panel2);margin-top:8px">${t.urg}</span>
+      </div>
+      <button class="iconbtn" onclick="toggleTask('${t.id}')">${t.done?'✓':'○'}</button>
+    </div>
+  `).join('');
+}
+
+async function toggleTask(id){
+  const p = current();
+  if(!p) return;
+  const t = p.tasks.find(x=>x.id===id);
+  if(t){ 
+    t.done = !t.done; 
+    await save(); 
+    renderAll(); 
+
+    if (t.done) {
+      try {
+        await fetch('https://my-backend-rrgj.onrender.com/api/notify-admin', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ personName: p.name, taskTitle: t.title })
+        });
+        toast('Уведомление отправлено начальнику!');
+      } catch (e) {}
+    }
+  }
+}
+
+function togglePushNotifications(enable){
+  if (enable && 'Notification' in window) {
+    Notification.requestPermission().then(p => {
+      if (p === 'granted') toast('Уведомления включены');
+      else { document.getElementById('pushToggle').checked = false; toast('Отклонено'); }
+    });
+  }
+}
+
+function openAdminMenu(tab = 'users'){
+  if(!isDev) return;
+  currentAdminTab = tab;
+  document.getElementById('modalTitle').textContent = '⚡ Панель Админа';
+  
+  document.getElementById('modalBody').innerHTML = `
+    <div class="admin-folder-tabs">
+      <button class="admin-tab ${tab==='users'?'active':''}" onclick="openAdminMenu('users')">👥 Команда</button>
+      <button class="admin-tab ${tab==='broadcast'?'active':''}" onclick="openAdminMenu('broadcast')">📢 Рассылка</button>
+      <button class="admin-tab ${tab==='backup'?'active':''}" onclick="openAdminMenu('backup')">💾 Резервирование</button>
+      <button class="admin-tab ${tab==='logs'?'active':''}" onclick="openAdminMenu('logs')">📜 Логи</button>
+      <button class="admin-tab ${tab==='system'?'active':''}" onclick="openAdminMenu('system')">⚙ Пароли / Настройки</button>
+    </div>
+    <div id="adminTabContent"></div>
+  `;
+
+  renderAdminTabContent();
+  showModal();
+}
+
+function renderAdminTabContent(){
+  const content = document.getElementById('adminTabContent');
+  if(!content || !db) return;
+
+  if(currentAdminTab === 'users'){
+    content.innerHTML = `
+      <div style="display:grid;gap:10px;margin-bottom:14px">
+        <label style="font-size:12px;color:var(--muted)">Управление пользователями:</label>
+        ${db.people.map(p => `
+          <div style="display:flex;gap:8px;align-items:center;background:var(--input-bg);padding:10px;border-radius:10px;border:1px solid var(--line)">
+            <input style="flex:1" value="${esc(p.name)}" placeholder="Имя" onchange="updatePersonName('${p.id}', this.value)">
+            <input style="flex:1" value="${esc(p.telegramChatId||'')}" placeholder="Telegram ID" onchange="updatePersonTG('${p.id}', this.value)">
+            <select onchange="updatePersonTeam('${p.id}', this.value)">
+              <option value="1" ${p.team===1?'selected':''}>Команда 1</option>
+              <option value="2" ${p.team===2?'selected':''}>Команда 2</option>
+            </select>
+            <button class="iconbtn danger" onclick="removePerson('${p.id}')">⌫</button>
+          </div>
+        `).join('')}
+      </div>
+      <button class="btn primary" style="width:100%" onclick="addPersonPrompt()">＋ Добавить сотрудника</button>
+    `;
+  } 
+  else if(currentAdminTab === 'broadcast'){
+    content.innerHTML = `
+      <div style="display:grid;gap:12px">
+        <div class="field full">
+          <label>Глобальное сообщение всем в Telegram</label>
+          <textarea id="bcMessage" rows="4" placeholder="Текст сообщения..."></textarea>
+        </div>
+        <button class="btn primary" onclick="sendBroadcastMessage()">📢 Отправить всем</button>
+      </div>
+    `;
+  }
+  else if(currentAdminTab === 'backup'){
+    content.innerHTML = `
+      <div style="display:grid;gap:14px">
+        <div>
+          <div style="font-weight:700;margin-bottom:4px">Экспорт данных</div>
+          <button class="btn primary" onclick="exportData()">⬇ Скачать JSON</button>
+        </div>
+        <hr style="border:0;border-top:1px solid var(--line)">
+        <div>
+          <div style="font-weight:700;margin-bottom:4px">Импорт данных</div>
+          <input type="file" id="importFile" accept=".json" onchange="importData(event)">
+        </div>
+      </div>
+    `;
+  }
+  else if(currentAdminTab === 'logs'){
+    content.innerHTML = `
+      <div style="max-height:300px;overflow-y:auto">
+        ${(db.logs||[]).length ? db.logs.map(l => `
+          <div class="log-item"><span>${esc(l.text)}</span><strong style="color:var(--muted)">${l.time}</strong></div>
+        `).join('') : '<div class="empty">Нет логов</div>'}
+      </div>
+    `;
+  }
+  else if(currentAdminTab === 'system'){
+    content.innerHTML = `
+      <div style="display:grid;gap:14px">
+        <div class="form">
+          <div class="field"><label>Пароль Сотрудника</label><input id="pUser" value="${esc(db.passwords.user)}"></div>
+          <div class="field"><label>Пароль Админа</label><input id="pDev" value="${esc(db.passwords.dev)}"></div>
+        </div>
+        <button class="btn primary" onclick="savePasswords()">Сохранить пароли</button>
+        <hr style="border:0;border-top:1px solid var(--line)">
+        <div class="field full">
+          <label>Telegram Bot Token</label>
+          <input id="bToken" value="${esc(db.botToken||'')}" onchange="saveBotToken(this.value)">
+        </div>
+        <div class="field full">
+          <label>Telegram Chat ID Начальника (для уведомлений)</label>
+          <input id="aChatId" value="${esc(db.adminChatId||'')}" placeholder="123456789" onchange="saveAdminChatId(this.value)">
+        </div>
+        <button class="btn danger" onclick="resetDatabase()">🔥 Сбросить всё</button>
+      </div>
+    `;
+  }
+}
+
+async function sendBroadcastMessage(){
+  const msg = document.getElementById('bcMessage').value.trim();
+  if(!msg) return toast('Введите текст');
+  if(!db.botToken) return toast('Укажите Bot Token!');
+
+  let count = 0;
+  for(let p of db.people){
+    if(p.telegramChatId){
+      try {
+        await fetch(`https://api.telegram.org/bot${db.botToken}/sendMessage`, {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ chat_id: p.telegramChatId, text: `📢 *Объявление:*\n\n${msg}`, parse_mode: 'Markdown' })
+        });
+        count++;
+      }catch(e){}
+    }
+  }
+  toast(`Отправлено пользователям: ${count}`);
+}
+
+function exportData(){
+  const blob = new Blob([JSON.stringify(db, null, 2)], {type : 'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `backup-${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+}
+
+function importData(e){
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = function(evt){
+    try {
+      db = JSON.parse(evt.target.result);
+      save();
+      applyTheme(db.theme || 'default-dark');
+      renderAll();
+      toast('Успешно восстановлено!');
+      closeModal();
+    } catch(err){ toast('Ошибка файла!'); }
+  };
+  reader.readAsText(file);
+}
+
+function updatePersonName(id, val){ const p=db.people.find(x=>x.id===id); if(p){ p.name=val.trim(); save(); renderAll(); } }
+function updatePersonTG(id, val){ const p=db.people.find(x=>x.id===id); if(p){ p.telegramChatId=val.trim(); save(); } }
+function updatePersonTeam(id, teamVal){ const p=db.people.find(x=>x.id===id); if(p){ p.team=parseInt(teamVal); save(); renderAll(); } }
+
+function addPersonPrompt(){
+  const name=prompt('Имя нового сотрудника:');
+  if(name){ 
+    db.people.push({id:crypto.randomUUID(), team:activeTeam, name:name.trim(), telegramChatId:'', services:[], tasks:[]}); 
+    save(); openAdminMenu('users'); renderAll(); 
+  }
+}
+function removePerson(id){ 
+  db.people=db.people.filter(x=>x.id!==id); 
+  save(); openAdminMenu('users'); renderAll(); 
+}
+
+function savePasswords(){
+  db.passwords.user = document.getElementById('pUser').value.trim();
+  db.passwords.dev = document.getElementById('pDev').value.trim();
+  save(); toast('Пароли обновлены');
+}
+
+function saveBotToken(val){ db.botToken = val.trim(); save(); toast('Токен сохранен'); }
+function saveAdminChatId(val){ db.adminChatId = val.trim(); save(); toast('ID начальника сохранен'); }
+
+function resetDatabase(){
+  if(confirm('Сбросить данные?')){
+    db = {
+      passwords: { user: '111', dev: '11111' },
+      botToken: '',
+      adminChatId: '',
+      theme: 'default-dark',
+      teams: { 1: { name: 'Команда 1' }, 2: { name: 'Команда 2' } },
+      people: [
+        {id:'p1', team: 1, name:'Карина', telegramChatId:'', services:[], tasks:[]},
+        {id:'p2', team: 1, name:'Дима', telegramChatId:'', services:[], tasks:[]}
+      ],
+      logs: []
+    };
+    save();
+    location.reload();
+  }
+}
+
+function renderTable(){
+  const p = current();
+  const q = document.getElementById('search').value.toLowerCase();
+  const rows = (p?.services||[]).filter(s=>(s.name+' '+s.login).toLowerCase().includes(q));
+  
+  document.getElementById('table').innerHTML = rows.length ? rows.map(s=>`
+    <tr>
+      <td><div class="service"><div class="service-icon">${esc(s.name[0]||'?')}</div><div class="service-name">${esc(s.name)}</div></div></td>
+      <td>${s.login ? `<span class="masked">${esc(s.login)}</span><button class="copy" onclick="copyText('${esc(s.login)}')">⧉</button>` : '—'}</td>
+      <td>${s.password ? `<span class="masked">${esc(s.password)}</span><button class="copy" onclick="copyText('${esc(s.password)}')">⧉</button>` : '—'}</td>
+      <td><div class="row-actions"><button class="iconbtn" onclick="openService('${s.id}')">✎</button><button class="iconbtn danger" onclick="deleteService('${s.id}')">⌫</button></div></td>
+    </tr>`).join('') : `<tr><td colspan="4"><div class="empty">Нет доступов</div></td></tr>`;
+
+  document.getElementById('mobileCards').innerHTML = rows.map(s=>`
+    <div class="m-card">
+      <div class="m-card-top"><strong>${esc(s.name)}</strong></div>
+      <div class="m-card-data">
+        <div>Логин: ${esc(s.login||'—')}</div>
+        <div>Пароль: ${esc(s.password||'—')}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function openService(id=null){
+  const p=current(); if(!p) return toast('Выберите сотрудника');
+  const s = id ? p.services.find(x=>x.id===id) : {name:'', login:'', password:''};
+  document.getElementById('modalTitle').textContent = id ? 'Изменить доступ' : 'Новый доступ';
+  document.getElementById('modalBody').innerHTML = `
+    <form class="form" onsubmit="submitService(event, '${id||''}')">
+      <div class="field full"><label>Название сервиса</label><input id="sName" required value="${esc(s.name)}"></div>
+      <div class="field full"><label>Логин / E-mail</label><input id="sLogin" value="${esc(s.login)}"></div>
+      <div class="field full"><label>Пароль</label><input id="sPass" value="${esc(s.password)}"></div>
+      <div class="modal-actions field full">
+        <button type="button" class="btn" onclick="closeModal()">Отмена</button>
+        <button class="btn primary">Сохранить</button>
+      </div>
+    </form>`;
+  showModal();
+}
+
+function submitService(e, id){
+  e.preventDefault();
+  const p = current();
+  if(!p.services) p.services = [];
+  const item = { id: id || crypto.randomUUID(), name: sName.value.trim(), login: sLogin.value.trim(), password: sPass.value };
+  
+  if(id){ const i = p.services.findIndex(x=>x.id===id); p.services[i] = item; }
+  else p.services.push(item);
+  
+  save(); closeModal(); renderAll(); toast('Сохранено');
+}
+
+function deleteService(id){
+  const p = current();
+  if(p && confirm('Удалить доступ?')){ 
+    p.services = p.services.filter(x=>x.id!==id); 
+    save(); renderAll(); 
+  }
+}
+
+function copyText(t){ navigator.clipboard?.writeText(t); toast('Скопировано'); }
+function toast(t){ const x=document.getElementById('toast'); x.textContent=t; x.classList.add('show'); setTimeout(()=>x.classList.remove('show'),2000); }
+function showModal(){ document.getElementById('modal').classList.add('show'); }
+function closeModal(){ document.getElementById('modal').classList.remove('show'); }
+</script>
+</body>
+</html>
