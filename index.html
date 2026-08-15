@@ -6,6 +6,20 @@
   <title>Team Access & Task Manager PRO</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    async function loadData() {
+  try {
+    const res = await fetch('https://my-backend-rrgj.onrender.com/api/notify-admin');
+    if (!res.ok) {
+      console.error('Backend error:', res.status, res.statusText);
+      throw new Error(`HTTP ${res.status}`);
+    }
+    db = await res.json();
+    applyTheme(db.theme || 'default-dark');
+  } catch(e) { 
+    console.error('Failed to load data:', e);
+    toast('⚠️ Не удалось подключиться к серверу');
+  }
+}
     
     :root[data-theme="default-dark"] {
       --bg:#0a0d14; --panel:#111622; --panel2:#171d2a; --line:#252d3d;
